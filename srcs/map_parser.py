@@ -104,18 +104,6 @@ class MapParser:
                     yield self.line
                 self.no_line += 1
 
-    def format_validation_error(self, e: ValidationError) -> str:
-        """Format ValidationError for them to be more clear
-
-        e -- The ValidationError to format
-        """
-        lines = []
-        for err in e.errors():
-            field = ".".join(str(p) for p in err["loc"])
-            msg = err["msg"]
-            lines.append(f"- {field}: {msg}")
-        return ("Invalid configuration:\n" + "\n".join(lines))
-
     @staticmethod
     def find_nth_occurence(c: str, s: str, n: int) -> int:
         index = -1
@@ -123,11 +111,108 @@ class MapParser:
             index = s.find(c, index + 1)
         return (index)
 
+    def _validate_hub_metadata(self, key: str, value: str,
+                               offset: int) -> None:
+        if (key == "color" and value not in
+                ["green", "blue", "red"]):
+            raise ParsingError(
+                f"Color {value} not supported",
+                ParseContext(
+                    file=self.file_path,
+                    line_no=self.no_line,
+                    line=self.line,
+                    col=offset + len(self.field) +
+                    sum(len(x) for x in self.parameters)
+                    + len(self.parameters) + 4 + len(key),
+                    length=len(str(value))
+                ))
+        elif (key == "zone" and value not in
+              ["normal", "restricted", "priority", "blocked"]):
+            raise ParsingError(
+                f"Zone {value} not supported",
+                ParseContext(
+                    file=self.file_path,
+                    line_no=self.no_line,
+                    line=self.line,
+                    col=offset + len(self.field) +
+                    sum(len(x) for x in self.parameters)
+                    + len(self.parameters) + 4 + len(key),
+                    length=len(str(value))
+                ))
+        elif (key == "max_drones" and int(value) <= 0):
+            raise ValueError
+
+    def _validate_metadata(self, metadata: Dict) -> None:
+        offset = 0
+        if ("hub" in self.field):
+            try:
+                for (key, value) in metadata.items():
+                    if (key not in ["color", "zone", "max_drones"]):
+                        raise ParsingError(
+                            "Invalid metadata parameter",
+                            ParseContext(
+                                file=self.file_path,
+                                line_no=self.no_line,
+                                line=self.line,
+                                col=offset + len(self.field) +
+                                sum(len(x) for x in self.parameters)
+                                + len(self.parameters) + 3,
+                                length=len(key) + len(str(value)) + 1
+                            ))
+                    self._validate_hub_metadata(key, value, offset)
+                    offset += len(key) + len(str(value)) + 2
+            except ValueError:
+                raise ParsingError(
+                    "Max drone property must be a positive integer",
+                    ParseContext(
+                        file=self.file_path,
+                        line_no=self.no_line,
+                        line=self.line,
+                        col=offset + len(self.field) +
+                        sum(len(x) for x in self.parameters)
+                        + len(self.parameters) + 4 + len(key),
+                        length=len(str(value))
+                    ))
+
+        elif (self.field == "connection"):
+            try:
+                for (key, value) in metadata.items():
+                    if (key != "max_link_capacity"):
+                        raise ParsingError(
+                            "Invalid metadata parameter",
+                            ParseContext(
+                                file=self.file_path,
+                                line_no=self.no_line,
+                                line=self.line,
+                                col=offset + len(self.field) +
+                                sum(len(x) for x in self.parameters)
+                                + len(self.parameters) + 3,
+                                length=len(key) + len(str(value)) + 1
+                            ))
+                    elif (key == "max_link_capacity" and int(value) <= 0):
+                        raise ValueError
+                    offset += len(key) + len(str(value)) + 2
+            except ValueError:
+                raise ParsingError(
+                    "Max link capacity property must"
+                    "be a positive integer",
+                    ParseContext(
+                        file=self.file_path,
+                        line_no=self.no_line,
+                        line=self.line,
+                        col=offset + len(self.field) +
+                        sum(len(x) for x in self.parameters)
+                        + len(self.parameters) + 4 + len(key),
+                        length=len(str(value))
+                    ))
+
     def _parse_attrs(self, s: str) -> dict:
         try:
             s = s.strip("[]")
             parts = s.split()
-            return dict(p.split("=", 1) for p in parts)
+            metadata = dict(p.split("=", 1) for p in parts)
+            self._validate_metadata(metadata)
+            return (metadata)
         except ValueError:
             raise ParsingError(
                 "Metadata syntax invalid",
@@ -212,10 +297,21 @@ class MapParser:
         if (len(self.parameters) != 1):
             self._raise_parameter_error("nb_drones only takes one value")
         try:
-            return (int(self.parameters[0]))
+            nb = int(self.parameters[0])
+            if (nb <= 0):
+                raise ParsingError(
+                    "Number of drones must a potitive integer",
+                    ParseContext(
+                        file=self.file_path,
+                        line_no=self.no_line,
+                        line=self.line,
+                        col=len(self.field) + 2,
+                        length=len(self.parameters[0])
+                    ))
+            return (nb)
         except ValueError:
             raise ParsingError(
-                "Number of drones must be an integer",
+                "Number of drones must be a positive integer",
                 ParseContext(
                     file=self.file_path,
                     line_no=self.no_line,
@@ -236,7 +332,8 @@ class MapParser:
             ))
 
     def _add_hub(self, hub_list: List[Hub]):
-        try:
+        hub = self._find_hub(self.parameters[0], hub_list)
+        if (not len(hub)):
             return (hub_list.append(Hub(
                 name=self.parameters[0],
                 coord=self._coords_to_2tuple(self.parameters[1:3]),
@@ -244,26 +341,18 @@ class MapParser:
                 color=self.metadata.get("color", "white"),
                 max_drones=self.metadata.get("max_drones", 1)
             )))
-        except ValidationError:
-            raise ParsingError(
-                "Hub parameters are not valid",
-                ParseContext(
-                    file=self.file_path,
-                    line_no=self.no_line,
-                    line=self.line,
-                    col=len(self.field) + 2,
-                    length=len(self.line) - (len(self.field) + 2)
-                ))
+        raise ParsingError(
+            f"{self.parameters[0]} hub already exist",
+            ParseContext(
+                file=self.file_path,
+                line_no=self.no_line,
+                line=self.line,
+                col=0,
+                length=len(self.field)
+            ))
 
     def _find_hub(self, hub_name: str, hub_list: List[Hub]):
-        try:
-            return ([h for h in hub_list if h.name == hub_name][0])
-        except IndexError:
-            raise ParsingError(
-                f"You can connect {hub_name} hub, it does not exist",
-                ParseContext(
-                    file=self.file_path,
-                ))
+        return ([h for h in hub_list if h.name == hub_name])
 
     def _handle_connection(self, hub_list: List[Hub]) -> None:
         if (len(self.parameters) != 1):
@@ -280,54 +369,87 @@ class MapParser:
                     col=len(self.field) + 2,
                     length=len(self.parameters[0])
                 ))
+        hub1 = self._find_hub(hubs[0], hub_list)
+        hub2 = self._find_hub(hubs[1], hub_list)
+        if (not len(hub1)):
+            self._hub_dont_exist_error(hubs[0])
+        if (not len(hub2)):
+            self._hub_dont_exist_error(hubs[1])
         for i in range(2):
+            cap = int(self.metadata.get("max_link_capacity", 1))
             con = Connection(
                 to=hubs[i],
-                max_link_capacity=self.metadata.get(
-                    "max_link_capacity", 1)
+                max_link_capacity=cap
             )
-            hub = self._find_hub(hubs[(i + 1) % 2], hub_list)
+            hub = self._find_hub(hubs[(i + 1) % 2], hub_list)[0]
             hub.neighboors.append(con)
 
+    def _hub_dont_exist_error(self, hub_name: str):
+        raise ParsingError(
+            f"hub {hub_name} does not exist",
+            ParseContext(
+                file=self.file_path,
+                line_no=self.no_line,
+                line=self.line,
+                col=len(self.field) + 2,
+                length=len(self.parameters[0])
+            ))
+
     def extract(self) -> Map:
-        nb_drones: int = 0
+        nb_drones: int = -1
         start: Hub | None = None
         end: Hub | None = None
         hub_list: List[Hub] = []
         for _ in self.iter_lines():
             self._split_line()
-            if (not nb_drones):
+            if (nb_drones < 0):
                 nb_drones = self._get_nbr_drones()
-                continue
-            if (self.field == "start_hub"):
+            elif (self.field == "start_hub"):
                 if (len(self.parameters) != 3):
                     self._raise_parameter_error("Hub parameters are incorrect")
                 if (start is not None):
                     self._raise_start_end_duplicate("start")
                 self._add_hub(hub_list)
                 start = hub_list[-1]
-            if (self.field == "end_hub"):
+            elif (self.field == "end_hub"):
                 if (len(self.parameters) != 3):
                     self._raise_parameter_error("Hub parameters are incorrect")
                 if (end is not None):
                     self._raise_start_end_duplicate("end")
                 self._add_hub(hub_list)
                 end = hub_list[-1]
-            if (self.field == "hub"):
+            elif (self.field == "hub"):
                 if (len(self.parameters) != 3):
                     self._raise_parameter_error("Hub parameters are incorrect")
                 self._add_hub(hub_list)
-            if (self.field == "connection"):
+            elif (self.field == "connection"):
                 self._handle_connection(hub_list)
+            else:
+                raise ParsingError(
+                    "Unknown Field",
+                    ParseContext(
+                        file=self.file_path,
+                        line_no=self.no_line,
+                        line=self.line,
+                        col=0,
+                        length=len(self.line)
+                    ))
         if start is None or end is None:
             raise ParsingError(
                 "You must provide both a start and end hub",
                 ParseContext(
                     file=self.file_path,
                 ))
-        return (Map(
-            start=start,
-            end=end,
-            nb_drones=nb_drones,
-            hubs=hub_list
-        ))
+        try:
+            return (Map(
+                start=start,
+                end=end,
+                nb_drones=nb_drones,
+                hubs=hub_list
+            ))
+        except ValidationError:
+            raise ParsingError(
+                "A problem occured during map validation",
+                ParseContext(
+                    file=self.file_path
+                ))
