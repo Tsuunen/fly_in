@@ -1,7 +1,7 @@
 from pydantic import ValidationError, BaseModel, Field
 from pathlib import Path
 import os
-from typing import Iterator, Tuple, List, Optional, Dict, Callable
+from typing import Iterator, Tuple, List, Optional, Dict
 from dataclasses import dataclass
 
 
@@ -113,21 +113,21 @@ class MapParser:
 
     def _validate_hub_metadata(self, key: str, value: str,
                                offset: int) -> None:
-        if (key == "color" and value not in
-                ["green", "blue", "red"]):
-            raise ParsingError(
-                f"Color {value} not supported",
-                ParseContext(
-                    file=self.file_path,
-                    line_no=self.no_line,
-                    line=self.line,
-                    col=offset + len(self.field) +
-                    sum(len(x) for x in self.parameters)
-                    + len(self.parameters) + 4 + len(key),
-                    length=len(str(value))
-                ))
-        elif (key == "zone" and value not in
-              ["normal", "restricted", "priority", "blocked"]):
+        # if (key == "color" and value not in
+        #         ["green", "blue", "red"]):
+        #     raise ParsingError(
+        #         f"Color {value} not supported",
+        #         ParseContext(
+        #             file=self.file_path,
+        #             line_no=self.no_line,
+        #             line=self.line,
+        #             col=offset + len(self.field) +
+        #             sum(len(x) for x in self.parameters)
+        #             + len(self.parameters) + 4 + len(key),
+        #             length=len(str(value))
+        #         ))
+        if (key == "zone" and value not in
+                ["normal", "restricted", "priority", "blocked"]):
             raise ParsingError(
                 f"Zone {value} not supported",
                 ParseContext(
