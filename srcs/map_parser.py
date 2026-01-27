@@ -1,7 +1,7 @@
 from pydantic import ValidationError, BaseModel, Field
 from pathlib import Path
 import os
-from typing import Iterator, Tuple, List, Optional, Dict
+from typing import Iterator, Tuple, List, Optional, Dict, Callable
 from dataclasses import dataclass
 
 
@@ -404,23 +404,19 @@ class MapParser:
             self._split_line()
             if (nb_drones < 0):
                 nb_drones = self._get_nbr_drones()
+            elif ("hub" in self.field and len(self.parameters) != 3):
+                self._raise_parameter_error("Hub parameters are incorrect")
             elif (self.field == "start_hub"):
-                if (len(self.parameters) != 3):
-                    self._raise_parameter_error("Hub parameters are incorrect")
                 if (start is not None):
                     self._raise_start_end_duplicate("start")
                 self._add_hub(hub_list)
                 start = hub_list[-1]
             elif (self.field == "end_hub"):
-                if (len(self.parameters) != 3):
-                    self._raise_parameter_error("Hub parameters are incorrect")
                 if (end is not None):
                     self._raise_start_end_duplicate("end")
                 self._add_hub(hub_list)
                 end = hub_list[-1]
             elif (self.field == "hub"):
-                if (len(self.parameters) != 3):
-                    self._raise_parameter_error("Hub parameters are incorrect")
                 self._add_hub(hub_list)
             elif (self.field == "connection"):
                 self._handle_connection(hub_list)
