@@ -3,6 +3,7 @@ from font_monospace import FONT, FONT_W, FONT_H, NO_CHAR
 from mlx import Mlx
 from typing import Any, Tuple, List
 from drone import Drone
+from time import monotonic
 
 
 class MapDisplay:
@@ -18,6 +19,7 @@ class MapDisplay:
             self.mlx, 1080, 720, "Fly in - relaforg")
         self._compute_graph_info()
         self._compute_img()
+        self.last_click = monotonic()
 
     def _compute_graph_info(self):
         min_x = min(self.map.hubs, key=lambda x: x.coord[0]).coord[0]
@@ -84,7 +86,11 @@ class MapDisplay:
         x, y: click coordinates
         """
         if (button == 1):
+            tmp = monotonic()
+            if (tmp - self.last_click <= 0.3):
+                print(tmp)
             self.drag_start = (x, y)
+            self.last_click = tmp
 
     def _graph_to_img_coord(self, graph_x: int,
                             graph_y: int) -> Tuple[int, int]:
