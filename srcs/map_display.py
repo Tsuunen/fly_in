@@ -1,12 +1,14 @@
 from map_parser import Map, Hub
 from font_monospace import FONT, FONT_W, FONT_H, NO_CHAR
 from mlx import Mlx
-from typing import Any, Tuple
+from typing import Any, Tuple, List
+from drone import Drone
 
 
 class MapDisplay:
-    def __init__(self, map: Map):
+    def __init__(self, map: Map, drones: List[Drone]):
         self.map = map
+        self.drones = drones
         self.cell_size = 199
         self.offset = (0, 0)
         self.drag_start: Tuple[int, int] | None = None
@@ -111,6 +113,12 @@ class MapDisplay:
                         or y == self.img_height - 1):
                     self.put_pixel(x, y)
 
+    def put_drone(self, x: int, y: int) -> None:
+        for dy in range(len(Drone.glyph())):
+            for dx in range(len(Drone.glyph()[dy])):
+                if (Drone.glyph()[dy][dx] == 1):
+                    self.put_pixel(x + dx, y + dy)
+
     def put_connections(self, hub: Hub) -> None:
         for c in hub.neighboors:
             h = [h for h in self.map.hubs if c.to == h.name][0]
@@ -118,15 +126,19 @@ class MapDisplay:
                           self._graph_to_img_coord(h.coord[0], h.coord[1]))
 
     def put_hub(self, hub: Hub):
+        x, y = self._graph_to_img_coord(hub.coord[0], hub.coord[1])
         size = 7
         offset = size // 2
         for i in range(size):
             for j in range(size):
-                x, y = self._graph_to_img_coord(hub.coord[0], hub.coord[1])
                 color = self._color_to_hex(hub.color)
                 self.put_pixel(x - offset + j, y - offset + i, color)
         offset_x = len(hub.name) * FONT_W // 2
         self._put_string(x - offset_x, y - size - FONT_H, hub.name)
+        nb_drone = len([d for d in self.drones if d.coord == hub.coord])
+        if (nb_drone != 0):
+            self._put_string(x + 3, y + size + 5, str(nb_drone))
+            self.put_drone(x - 15, y + 10)
 
     def fill_img(self, color: int = 0x000000FF) -> None:
         """Fill an mlx image with color
@@ -161,10 +173,8 @@ class MapDisplay:
         err = dx - dy
         x0, y0 = c1
         x1, y1 = c2
-        while True:
+        while (x0 != x1 or y0 != y1):
             self.put_pixel(x0, y0, 0xC0C0C0FF)
-            if x0 == x1 and y0 == y1:
-                break
             e2 = 2 * err
             if e2 > -dy:
                 err -= dy
