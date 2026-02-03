@@ -4,6 +4,7 @@ from mlx import Mlx
 from typing import Any, Tuple, List
 from drone import Drone
 from time import monotonic
+from copy import deepcopy
 
 
 class Image:
@@ -16,9 +17,10 @@ class Image:
 
 
 class MapDisplay:
-    def __init__(self, map: Map, drones: List[Drone]):
+    def __init__(self, map: Map, drones: List[Drone], output_path: str):
         self.map = map
-        self.drones = drones
+        self.drones_state = [deepcopy(drones)]
+        self._extract_output(output_path)
         self.cell_size = 199
         self.offset = (0, 0)
         self.drag_start: Tuple[int, int] | None = None
@@ -32,6 +34,7 @@ class MapDisplay:
         self.last_click = monotonic()
         self.modal: None | Image = None
         self.current_hub: Hub | None = None
+        self.step = 0
 
     def _compute_graph_info(self):
         min_x = min(self.map.hubs, key=lambda x: x.coord[0]).coord[0]
@@ -44,6 +47,30 @@ class MapDisplay:
 
     def _compute_img(self):
         self.img_height = self.graph_size[1] * self.cell_size
+
+    def _extract_output(self, output_path: str) -> None:
+        try:
+            with open(output_path, "r") as file:
+                lines = list(file)
+                nbr_line = len(lines)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"{output_path} does not exists")
+        except PermissionError:
+            raise PermissionError(
+                f"You do not have read permission on {output_path}")
+        for i in range(nbr_line):
+            state = deepcopy(self.drones_state[i])
+            act = [line.split("-") for line in lines[i].split()]
+            for x in act:
+                x[0] = x[0][1:]
+                for d in state:
+                    if (d.id == x[0]):
+                        for h in self.map.hubs:
+                            if (h.name == x[1]):
+                                d.coord = h.coord
+                                break
+                        break
+            self.drones_state.append(state)
 
     def _graph_to_img_coord(self, graph_x: int,
                             graph_y: int) -> Tuple[int, int]:
@@ -80,6 +107,7 @@ class MapDisplay:
                         lambda _: self.m.mlx_loop_exit(self.mlx), None)
         self.m.mlx_mouse_hook(self.win, self.on_mouse, None)
         self.m.mlx_hook(self.win, 5, 1 << 3, self.on_mouse_release, None)
+        self.m.mlx_key_hook(self.win, self.key_pressed, None)
         self.draw()
         self.refresh()
         self.m.mlx_loop(self.mlx)
@@ -109,6 +137,25 @@ class MapDisplay:
                 x - (self.modal.width // 2), y + 10)
         self.m.mlx_string_put(self.mlx, self.win, 15, 10, 0xFFFFFFFF,
                               "Fly in")
+
+    def key_pressed(self, keycode: int, _: Any) -> None:
+        """Key press handler
+
+        Args:
+        keycode: which key has been pressed
+        """
+        if (keycode == 65363):
+            if (self.step < len(self.drones_state) - 1):
+                self.step += 1
+                self.draw()
+                self.refresh()
+        elif (keycode == 65361):
+            if (self.step > 0):
+                self.step -= 1
+                self.draw()
+                self.refresh()
+        elif (keycode == 113):
+            self.m.mlx_loop_exit(self.mlx)
 
     def on_mouse_release(self, button: int, x: int, y: int, _: Any) -> None:
         """Mouse click release handler
@@ -159,9 +206,9 @@ class MapDisplay:
             # potential refresh here
         display: List[str] = [hub.name, "zone_type: " + hub.zone_type,
                               "max_drones: " + str(hub.max_drones)]
-        drones = [d.id for d in self.drones if d.coord == hub.coord]
+        drones = [d.id for d in self.drones_state[self.step]
+                  if d.coord == hub.coord]
         display += drones
-        print(display)
         offset = 1 if len(drones) else 0
         height = (5 + len(drones) + offset) * FONT_H
         width = (len(max(display, key=lambda d: len(d))) + 2) * FONT_W
@@ -208,7 +255,8 @@ class MapDisplay:
                 self.put_pixel(self.img, x - offset + j, y - offset + i, color)
         offset_x = len(hub.name) * FONT_W // 2
         self.put_string(self.img, x - offset_x, y - size - FONT_H, hub.name)
-        nb_drone = len([d for d in self.drones if d.coord == hub.coord])
+        nb_drone = len(
+            [d for d in self.drones_state[self.step] if d.coord == hub.coord])
         if (nb_drone != 0):
             self.put_string(self.img, x + 3, y + size + 5, str(nb_drone))
             self.put_drone(x - 15, y + 10)

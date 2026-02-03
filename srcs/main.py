@@ -8,8 +8,8 @@ if (__name__ == "__main__"):
         map = parser.extract()
         drones = []
         for d in range(map.nb_drones):
-            drones.append(Drone("D" + str(d), map.start.coord))
-        display = MapDisplay(map, drones)
+            drones.append(Drone(str(d + 1), map.start.coord))
+        display = MapDisplay(map, drones, "output.txt")
         display.run()
     except ParsingError as e:
         print(e)
