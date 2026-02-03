@@ -38,8 +38,10 @@ class Dijkstra:
                 if (dst not in new):
                     new[dst] = []
                 new[dst].append((src, cost))
-        for hub in new.values():
-            hub.sort(key=lambda c: c[1])
+        for (name, values) in new.items():
+            values.sort(key=lambda c:
+                        (c[1], 0 if self._find_hub_by_name(c[0]).zone_type ==
+                         "priority" else 1))
         return (new)
 
     def run(self):
@@ -55,7 +57,9 @@ class Dijkstra:
             for h in neighboors:
                 # sauvegarder que si plus petit
                 if (h.name not in visited and self._get_hub_cost(current) > 0):
+                    print(current.name, out[current.name])
                     new_cost = cost + self._get_hub_cost(current)
                     out[current.name].append((h.name, new_cost))
                     queue.append((h, new_cost))
+        print(out)
         return (self._reverse(out))
