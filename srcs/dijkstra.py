@@ -53,13 +53,20 @@ class Dijkstra:
             current, cost = queue.pop(0)
             visited.add(current.name)
             neighboors = self._get_neighboors(current)
-            out[current.name] = []
+            if (not out.get(current.name)):
+                out[current.name] = []
             for h in neighboors:
                 # sauvegarder que si plus petit
                 if (h.name not in visited and self._get_hub_cost(current) > 0):
-                    print(current.name, out[current.name])
-                    new_cost = cost + self._get_hub_cost(current)
-                    out[current.name].append((h.name, new_cost))
+                    new_cost = cost + \
+                        self._get_hub_cost(self._find_hub_by_name(h.name))
+                    for i in range(len(out[current.name])):
+                        if (h.name == out[current.name][i][0]):
+                            if (new_cost < out[current.name][i][1]):
+                                out[current.name].pop(i)
+                                out[current.name].append((h.name, new_cost))
+                            break
+                    else:
+                        out[current.name].append((h.name, new_cost))
                     queue.append((h, new_cost))
-        print(out)
         return (self._reverse(out))
