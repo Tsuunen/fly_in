@@ -128,7 +128,6 @@ class MapDisplay:
         for h in self.map.hubs:
             self.put_hub(h)
         self.put_drones()
-        print(self.conn_coord)
 
     def refresh(self) -> None:
         """Refresh the window to display modification
@@ -287,7 +286,6 @@ class MapDisplay:
                 nbr[d.coord] = 1
         for (coord, nb_drone) in nbr.items():
             x, y = self._graph_to_img_coord(coord[0], coord[1])
-            print(x, y)
             self.put_string(self.img, x + 3, y + 7 + 5, str(nb_drone))
             self.put_drone(x - 15, y + 10)
 

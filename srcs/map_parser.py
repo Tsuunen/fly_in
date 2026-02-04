@@ -80,6 +80,7 @@ class Map(BaseModel):
     end: Hub = Field()
     nb_drones: int = Field(ge=1)
     hubs: List[Hub] = Field(default_factory=list)
+    conns: List[Connection] = Field(default_factory=list)
 
 
 class MapParser:
@@ -355,7 +356,8 @@ class MapParser:
     def _find_hub(self, hub_name: str, hub_list: List[Hub]):
         return ([h for h in hub_list if h.name == hub_name])
 
-    def _handle_connection(self, hub_list: List[Hub]) -> None:
+    def _handle_connection(self, hub_list: List[Hub],
+                           conn_list: List[Connection]) -> None:
         if (len(self.parameters) != 1):
             self._raise_parameter_error(
                 "connection only takes one value")
@@ -384,6 +386,7 @@ class MapParser:
                 dst=hubs[i],
                 max_link_capacity=cap
             )
+            conn_list.append(con)
             hub.neighboors.append(con)
 
     def _hub_dont_exist_error(self, hub_name: str):
@@ -402,6 +405,7 @@ class MapParser:
         start: Hub | None = None
         end: Hub | None = None
         hub_list: List[Hub] = []
+        conn_list: List[Connection] = []
         for _ in self.iter_lines():
             self._split_line()
             if (nb_drones < 0):
@@ -421,7 +425,7 @@ class MapParser:
             elif (self.field == "hub"):
                 self._add_hub(hub_list)
             elif (self.field == "connection"):
-                self._handle_connection(hub_list)
+                self._handle_connection(hub_list, conn_list)
             else:
                 raise ParsingError(
                     "Unknown Field",
@@ -443,7 +447,8 @@ class MapParser:
                 start=start,
                 end=end,
                 nb_drones=nb_drones,
-                hubs=hub_list
+                hubs=hub_list,
+                conns=conn_list
             ))
         except ValidationError:
             raise ParsingError(
