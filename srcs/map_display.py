@@ -276,7 +276,6 @@ class MapDisplay:
     def put_hub_info(self, hub: Hub):
         if (self.modal is not None):
             self.m.mlx_destroy_image(self.mlx, self.modal.img)
-            # potential refresh here
         display: List[str] = [hub.name, "zone_type: " + hub.zone_type,
                               "max_drones: " + str(hub.max_drones)]
         drones = [d.id for d in self.drones_state[self.step]
@@ -301,9 +300,9 @@ class MapDisplay:
     def put_conn_info(self, conn: Connection):
         if (self.modal is not None):
             self.m.mlx_destroy_image(self.mlx, self.modal.img)
-            # potential refresh here
-        display: List[str] = [f"max link capacity = {conn.max_link_capacity}"]
-        height = (1) * FONT_H + 15
+        display: List[str] = [f"{conn.src} -> {conn.dst}",
+                              f"max link capacity = {conn.max_link_capacity}"]
+        height = len(display) * FONT_H + 15
         width = (len(max(display, key=lambda d: len(d))) + 2) * FONT_W
         self.modal = Image(self.m, self.mlx, width, height)
         self.fill_img(self.modal)
