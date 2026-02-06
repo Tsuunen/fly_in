@@ -1,5 +1,10 @@
-pydantic
-questionary
-typing
+annotated-types==0.7.0
 mlx-2.2.1-py3-none-any.whl
-
+prompt_toolkit==3.0.52
+pydantic==2.12.5
+pydantic_core==2.41.5
+questionary==2.1.1
+typing==3.7.4.3
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+wcwidth==0.5.3
