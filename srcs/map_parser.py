@@ -115,19 +115,6 @@ class MapParser:
 
     def _validate_hub_metadata(self, key: str, value: str,
                                offset: int) -> None:
-        # if (key == "color" and value not in
-        #         ["green", "blue", "red"]):
-        #     raise ParsingError(
-        #         f"Color {value} not supported",
-        #         ParseContext(
-        #             file=self.file_path,
-        #             line_no=self.no_line,
-        #             line=self.line,
-        #             col=offset + len(self.field) +
-        #             sum(len(x) for x in self.parameters)
-        #             + len(self.parameters) + 4 + len(key),
-        #             length=len(str(value))
-        #         ))
         if (key == "zone" and value not in
                 ["normal", "restricted", "priority", "blocked"]):
             raise ParsingError(
@@ -336,6 +323,16 @@ class MapParser:
     def _add_hub(self, hub_list: List[Hub]):
         hub = self._find_hub(self.parameters[0], hub_list)
         if (not len(hub)):
+            if ("-" in self.parameters[0]):
+                raise ParsingError(
+                    f"{self.parameters[0]} is not a valid name",
+                    ParseContext(
+                        file=self.file_path,
+                        line_no=self.no_line,
+                        line=self.line,
+                        col=len(self.field) + 2,
+                        length=len(self.parameters[0])
+                    ))
             return (hub_list.append(Hub(
                 name=self.parameters[0],
                 coord=self._coords_to_2tuple(self.parameters[1:3]),
