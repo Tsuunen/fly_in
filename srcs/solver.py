@@ -32,31 +32,48 @@ class Solver:
     def run(self):
         state = {h.name: [] for h in self.map.hubs[::-1]}
         state[self.map.start.name] = self.drones
+        state["transit"] = []
         out = ""
+        in_transit: List[Tuple[Drone, Hub]] = []
         while (len(state[self.map.end.name]) < self.map.nb_drones):
             conn = {(c.src, c.dst): []
                     for hub in self.map.hubs for c in hub.neighboors}
             step_str = ""
+            next_transit: List[Tuple[Drone, Hub]] = []
             for (curr_hub, drones) in state.items():
                 if (curr_hub == self.map.end.name):
                     continue
                 src = self._get_hub_from_name(curr_hub)
                 for d in list(drones):
-                    for p in self.paths[src.name]:
-                        dest = self._get_hub_from_name(p[0])
-                        con = self._get_conn(src.name, dest.name)
-                        if (dest.name != self.map.end.name and
-                                (dest.max_drones <= len(state[dest.name]) or
-                                 con.max_link_capacity
-                                 <= len(conn[(src.name, dest.name)]))):
+                    for t in in_transit:
+                        if (d == t[0]):
+                            state[t[1].name].append(d)
+                            d.coord = t[1].coord
+                            in_transit.remove(t)
+                            state["transit"].remove(t[0])
+                            step_str += f" D{d.id}-{t[1].name}"
                             continue
-                        state[src.name].remove(d)
-                        state[dest.name].append(d)
-                        conn[(src.name, dest.name)].append(d)
-                        d.coord = dest.coord
-                        step_str += f" D{d.id}-{dest.name}"
-                        break
+                    if (src is not None):
+                        for p in self.paths[src.name]:
+                            dest = self._get_hub_from_name(p[0])
+                            con = self._get_conn(src.name, dest.name)
+                            if (dest.name != self.map.end.name and
+                                    (dest.max_drones <= len(state[dest.name])
+                                     or con.max_link_capacity
+                                     <= len(conn[(src.name, dest.name)]))):
+                                continue
+                            if (dest.zone_type == "restricted"):
+                                next_transit.append((d, dest))
+                                state["transit"].append(d)
+                                step_str += f" D{d.id}-{src.name}->{dest.name}"
+                            else:
+                                state[dest.name].append(d)
+                                d.coord = dest.coord
+                                step_str += f" D{d.id}-{dest.name}"
+                            state[src.name].remove(d)
+                            conn[(src.name, dest.name)].append(d)
+                            break
+            in_transit = next_transit
             out += step_str.strip() + "\n"
         with open("output.txt", "w") as file:
             file.write(out)
-        print(out)

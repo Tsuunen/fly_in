@@ -1,11 +1,12 @@
 from map_parser import Map, Hub, Connection
 from font_monospace import FONT, FONT_W, FONT_H, NO_CHAR
 from mlx import Mlx
-from typing import Any, Tuple, List, Dict, TypedDict
+from typing import Any, Tuple, List, TypedDict
 from drone import Drone
 from time import monotonic
 from copy import deepcopy
 from math import ceil
+from random import randint
 
 
 class ConnCoord(TypedDict):
@@ -56,6 +57,12 @@ class MapDisplay:
     def _compute_img(self):
         self.img_height = self.graph_size[1] * self.cell_size
 
+    def _find_hub_by_name(self, hub_name: str) -> Hub | None:
+        for h in self.map.hubs:
+            if (h.name == hub_name):
+                return (h)
+        return (None)
+
     def _extract_output(self, output_path: str) -> None:
         try:
             with open(output_path, "r") as file:
@@ -66,18 +73,46 @@ class MapDisplay:
         except PermissionError:
             raise PermissionError(
                 f"You do not have read permission on {output_path}")
-        for i in range(nbr_line):
-            state = deepcopy(self.drones_state[i])
-            act = [line.split("-") for line in lines[i].split()]
-            for x in act:
-                x[0] = x[0][1:]
-                for d in state:
-                    if (d.id == x[0]):
-                        for h in self.map.hubs:
-                            if (h.name == x[1]):
-                                d.coord = h.coord
-                                break
-                        break
+
+        # Index des hubs : nom -> coord
+        hub_coord_by_name = {h.name: h.coord for h in self.map.hubs}
+
+        for line_idx in range(nbr_line):
+            # Copie de l'état au tour line_idx
+            state = deepcopy(self.drones_state[line_idx])
+
+            # Index des drones dans cet état : id -> objet Drone
+            drone_by_id = {d.id: d for d in state}
+
+            # Chaque token: "D<id>-<hub>"
+            for token in lines[line_idx].split():
+                raw_id, hub_name = token.split("-", 1)
+                drone_id = raw_id[1:]  # enlève "D"
+
+                d = drone_by_id.get(drone_id)
+                coord = hub_coord_by_name.get(hub_name)
+                if d is not None and coord is not None:
+                    d.coord = coord
+                elif d is not None:
+                    # Cas "connexion" : ex "SRC_DST"
+                    if "->" not in hub_name:
+                        continue  # format inconnu, on ignore
+
+                    src_name, dst_name = hub_name.split("->", 1)
+
+                    src_coord = hub_coord_by_name.get(src_name)
+                    dst_coord = hub_coord_by_name.get(dst_name)
+                    if src_coord is None or dst_coord is None:
+                        continue  # connexion vers hub inconnu
+
+                    # Milieu en coordonnées "graph" (entier)
+                    mx = (src_coord[0] + dst_coord[0]) / 2
+                    my = (src_coord[1] + dst_coord[1]) / 2
+                    d.coord = (mx, my)
+                else:
+                    # drone_id inconnu (n’existe pas dans cet état)
+                    continue
+
             self.drones_state.append(state)
 
     def _graph_to_img_coord(self, graph_x: int,
@@ -107,7 +142,34 @@ class MapDisplay:
                 return (0x0000FFFF)
             case "yellow":
                 return (0xFFFF00FF)
+            case "orange":
+                return (0xFFA500FF)
+            case "cyan":
+                return (0x00FFFFFF)
+            case "purple":
+                return (0x800080FF)
+            case "brown":
+                return (0xD2691EFF)
+            case "lime":
+                return (0x32CD32FF)
+            case "magenta":
+                return (0xFF00FFFF)
+            case "gold":
+                return (0xFFD700FF)
+            case "black":
+                return (0x101010FF)
+            case "maroon":
+                return (0x800000FF)
+            case "darkred":
+                return (0x990000FF)
+            case "violet":
+                return (0x9400D3FF)
+            case "crimson":
+                return (0xDC143CFF)
+            case "rainbow":
+                return ((randint(0, 0xFFFFFF) << 8) | 0xFF)
             case "white" | _:
+                print(color)
                 return (0xFFFFFFFF)
 
     def run(self):
