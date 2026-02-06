@@ -175,6 +175,9 @@ class MapDisplay:
         for h in self.map.hubs:
             self.put_hub(h)
         self.put_drones()
+        self.put_string(
+            self.img, 5, 5, f"Total nbr of turns: {len(self.drones_state)}"
+            f" - Simulated turn: {self.step + 1}")
 
     def refresh(self) -> None:
         """Refresh the window to display modification
