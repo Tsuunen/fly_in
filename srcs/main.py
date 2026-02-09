@@ -2,11 +2,13 @@
 # from map_display import MapDisplay
 # from drone import Drone
 from reverse_cost_bfs import ReverseCostBFS
+from solver import Solver
 # from solver import Solver
 # from copy import deepcopy
 # import questionary
 # from pathlib import Path
 from map import Hub, Connection, Map
+from pprint import pprint
 
 if (__name__ == "__main__"):
     start = Hub(
@@ -19,7 +21,7 @@ if (__name__ == "__main__"):
         name="goal",
         coord=(2, 1),
         zone_type="normal",
-        max_drones=3
+        max_drones=1
     )
     path_a = Hub(
         name="path_a",
@@ -63,8 +65,14 @@ if (__name__ == "__main__"):
         ]
     )
     paths = ReverseCostBFS(map).run()
-    for (key, value) in paths.items():
-        print(key, end="\t")
-        for path in value:
-            print(path.src.name, path.cost, end=", ")
-        print()
+    # for (key, value) in paths.items():
+    #     print(key, end="\t")
+    #     for path in value:
+    #         print(path.src.name, path.cost, end=", ")
+    #     print()
+    if (not len(paths[map.start.name])):
+        print("No path from start to end")
+        exit(1)
+    solve = Solver(map, paths).run()
+    pprint(solve)
+    print(len(solve) - 1)
