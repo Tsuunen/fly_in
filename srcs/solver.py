@@ -52,27 +52,9 @@ class Solver:
                         self._compute_wait_time(tmp_state, best_path)
                             < path.cost):
                         continue
-                    if (path.src.zone_type == "restricted"):
-                        tmp_hub = Utils.get_hub_by_name(
-                            drone.location, self.map.hubs)
-                        if (tmp_hub is None):
-                            continue
-                        tmp_con = Utils.get_connection(
-                            (tmp_hub, path.src), self.map.connections)
-                        if (tmp_con is None):
-                            continue
-                        if (self.paths.get(tmp_con.name) is None):
-                            n_hub = deepcopy(path.src)
-                            n_hub.zone_type = "normal"
-                            self.paths[tmp_con.name] = [
-                                Path(n_hub, path.cost - 1)]
-                        tmp_state[drone.location].remove(drone)
-                        drone.location = tmp_con.name
-                        tmp_state[tmp_con.name].append(drone)
-                    else:
-                        tmp_state[drone.location].remove(drone)
-                        drone.location = path.src.name
-                        tmp_state[path.src.name].append(drone)
+                    tmp_state[drone.location].remove(drone)
+                    drone.location = path.src.name
+                    tmp_state[path.src.name].append(drone)
                     break
             states.append(deepcopy(tmp_state))
         return (states)
