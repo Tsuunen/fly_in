@@ -26,13 +26,13 @@ if (__name__ == "__main__"):
     path_a = Hub(
         name="path_a",
         coord=(1, 0),
-        zone_type="normal",
+        zone_type="restricted",
         max_drones=1
     )
     path_b = Hub(
         name="path_b",
         coord=(1, 2),
-        zone_type="priority",
+        zone_type="restricted",
         max_drones=1
     )
     junction = Hub(
@@ -75,5 +75,5 @@ if (__name__ == "__main__"):
         print("No path from start to end")
         exit(1)
     solve = Solver(map, paths).run()
-    # pprint(solve)
+    pprint(solve)
     print(len(solve) - 1)

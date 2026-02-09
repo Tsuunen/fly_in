@@ -22,3 +22,10 @@ class Utils:
                     == Counter((h.name for h in c.hubs))):
                 return (c)
         return (None)
+
+    @staticmethod
+    def get_hub_by_name(hub_name: str, hubs: List[Hub]) -> Hub | None:
+        for h in hubs:
+            if (h.name == hub_name):
+                return (h)
+        return (None)
