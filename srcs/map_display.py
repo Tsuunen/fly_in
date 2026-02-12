@@ -29,25 +29,27 @@ class Image:
 
 
 class MapDisplay:
-    """Map display class
+    """ Map diplay class
 
     Attributes:
         map: Map
+        drones_state: List[List[Drone]]
         cell_size: int
         offset: Tuple[int, int]
         drag_start: Tuple[int, int]
-        m: Mlx()
+        m: Mlx
         mlx: mlx pointer
         win: mlx window
         img: Image
         last_click: timestamp
-        modal: mlx window
+        modal: Image
         current_modal_coord: Tuple[int, int]
         step: int
-        solve: List[State]
-        graph_size: Tuple[int, int]
+        conn_coord: Tuple[int, int]
+        graph_size: int
         x_offset: int
         y_offset: int
+        img_height: int
     """
 
     def __init__(self, map: Map, solve: List[State]):
@@ -123,14 +125,6 @@ class MapDisplay:
         return (map_x + img_x, map_y + img_y)
 
     def _get_connection_coord(self, connection: Connection) -> Tuple[int, int]:
-        """Get connection coordinates
-
-        Args:
-            connection: Connection
-
-        Returns:
-            Tuple[int, int]
-        """
         coord1 = self._graph_to_img_coord(
             connection.hubs[0].coord[0], connection.hubs[0].coord[1])
         coord2 = self._graph_to_img_coord(
@@ -420,7 +414,6 @@ class MapDisplay:
             self.put_drone(x - 15, y + 10)
 
     def put_connections(self) -> None:
-        """Put all connections onto self.img"""
         for c in self.map.connections:
             coord1 = self._graph_to_img_coord(
                 c.hubs[0].coord[0], c.hubs[0].coord[1])

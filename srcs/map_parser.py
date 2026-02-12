@@ -15,11 +15,10 @@ class ParsingContext:
 
 
 class MapParser:
-    """Map parsing class
+    """MapParser class
 
     Attributes:
         file_path: str
-        line_no: int
     """
 
     def __init__(self, file_path: str) -> None:
@@ -42,14 +41,6 @@ class MapParser:
             raise ParsingError(f"Cannot read file {self.file_path}")
 
     def _raise_invalid_sintax(self, ctx: ParsingContext) -> NoReturn:
-        """Raise an invalid sintax ParsingError
-
-        Args:
-            ctx: ParsingContext
-
-        Raises:
-            ParsingError
-        """
         raise ParsingError(
             "Invalid syntax",
             ParsingErrorContext(
@@ -61,16 +52,6 @@ class MapParser:
 
     def _raise_precise(self, ctx: ParsingContext, message: str,
                        col: int) -> NoReturn:
-        """Raise an char precise ParsingError
-
-        Args:
-            ctx: ParsingContext
-            message: str
-            col: int
-
-        Raises:
-            ParsingError
-        """
         raise ParsingError(
             message,
             ParsingErrorContext(
@@ -81,15 +62,6 @@ class MapParser:
             ))
 
     def _raise_all_line(self, ctx: ParsingContext, message: str) -> NoReturn:
-        """Raise an entire line ParsingError
-
-        Args:
-            ctx: ParsingContext
-            message: str
-
-        Raises:
-            ParsingError
-        """
         raise ParsingError(
             message,
             ParsingErrorContext(
@@ -101,15 +73,6 @@ class MapParser:
             ))
 
     def _raise_parameters(self, ctx: ParsingContext, message: str) -> NoReturn:
-        """Raise parameters ParsingError
-
-        Args:
-            ctx: ParsingContext
-            message: str
-
-        Raises:
-            ParsingError
-        """
         raise ParsingError(
             message,
             ParsingErrorContext(
@@ -121,15 +84,6 @@ class MapParser:
             ))
 
     def _raise_metadata(self, ctx: ParsingContext, message: str) -> NoReturn:
-        """Raise metadata ParsingError
-
-        Args:
-            ctx: ParsingContext
-            message: str
-
-        Raises:
-            ParsingError
-        """
         offset = len(ctx.key) + 2 + len(ctx.args) + sum(len(p)
                                                         for p in ctx.args)
         raise ParsingError(
@@ -143,17 +97,6 @@ class MapParser:
             ))
 
     def _get_parsing_context(self, line: str) -> ParsingContext:
-        """Extract the parsing context from a line
-
-        Args:
-            line: str
-
-        Returns:
-            ParsingContext
-
-        Raises:
-            ParsingError
-        """
         ctx = ParsingContext()
         ctx.line = line
         ctx.line_no = self.line_no
@@ -196,11 +139,6 @@ class MapParser:
         return (ctx)
 
     def _validate_hub_ctx(self, ctx: ParsingContext) -> None:
-        """Check if hub ParsingContext is valid
-
-        Args:
-            ctx: ParsingContext
-        """
         if (len(ctx.args) != 3):
             self._raise_parameters(ctx, "The number of paramters is wrong")
         if ("-" in ctx.args[0]):
@@ -231,11 +169,6 @@ class MapParser:
                 self._raise_metadata(ctx, f"Unknown {key} attribute")
 
     def _validate_nb_drone_ctx(self, ctx: ParsingContext) -> None:
-        """Check if nb_drone ParsingContext is valid
-
-        Args:
-            ctx: ParsingContext
-        """
         if (len(ctx.args) != 1):
             self._raise_parameters(ctx, "The number of paramters is wrong")
         try:
@@ -248,11 +181,6 @@ class MapParser:
             self._raise_metadata(ctx, "nb_drones does not take any attribute")
 
     def _validate_connection_ctx(self, ctx: ParsingContext) -> None:
-        """Check if connection ParsingContext is valid
-
-        Args:
-            ctx: ParsingContext
-        """
         if (len(ctx.args) != 1):
             self._raise_parameters(ctx, "The number of paramters is wrong")
         if (len(ctx.args[0].split("-")) != 2):
@@ -270,14 +198,6 @@ class MapParser:
                 self._raise_metadata(ctx, f"Unknown {key} attribute")
 
     def _validate_ctx(self, ctx: ParsingContext) -> None:
-        """Validate if a ParsingContext is valid or not
-
-        Args:
-            ctx: ParsingContext
-
-        Raises:
-            ParsingError
-        """
         if (ctx.key in ["start_hub", "end_hub", "hub"]):
             self._validate_hub_ctx(ctx)
         elif (ctx.key == "nb_drones"):
@@ -296,29 +216,12 @@ class MapParser:
                 ))
 
     def _get_nb_drones(self, ctx: ParsingContext) -> int:
-        """Get the nunmber of drones
-
-        Args:
-            ctx: ParsingContext
-
-        Returns:
-            int
-        """
         if (ctx.key != "nb_drones"):
             self._raise_all_line(
                 ctx, "The first line must be the number of drones")
         return (int(ctx.args[0]))
 
     def _add_hub(self, ctx: ParsingContext, hubs: List[Hub]) -> Hub:
-        """Try to add a new hub to hubs
-
-        Args:
-            ctx: ParsingContext
-            hubs: List[Hub]
-
-        Returns:
-            Hub
-        """
         try:
             hub = Hub(
                 name=ctx.args[0],
@@ -337,13 +240,6 @@ class MapParser:
     def _add_connection(self, ctx: ParsingContext,
                         connections: List[Connection],
                         hubs: List[Hub]) -> None:
-        """Try to add a new connection to connections
-
-        Args:
-            ctx: ParsingContext
-            connections: List[Connection]
-            hubs: List[Hub]
-        """
         names = ctx.args[0].split("-")
         hub1 = Utils.get_hub_by_name(names[0], hubs)
         hub2 = Utils.get_hub_by_name(names[1], hubs)
@@ -365,14 +261,6 @@ class MapParser:
         connections.append(con)
 
     def run(self) -> Map:
-        """Run the parsing execution
-
-        Returns:
-            Map
-
-        Raises:
-            ParsingError
-        """
         nb_drones: int | None = None
         hubs: List[Hub] = []
         connections: List[Connection] = []
