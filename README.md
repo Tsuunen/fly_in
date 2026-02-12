@@ -21,7 +21,7 @@ You are now greeted by a menu where you can browse and select all the maps prese
 - ChatGPT
 
 # Algorithm
-I run a Dijkstra algorithm from the goal hub, then reverse the dictionnary and sort each list by cost and priority. That way from any hub I can access in order the best path to follow and the number of steps to reach the goal hub. So for each drone, I retrieve the path list, check if the best is free, if not check if the second-best is, and so on. If an auxilary path is free, before choosing I check if waiting is not smarter. If all paths are occuped, the drone will wait a turn.
+I run a Reverse Cost-based BFS algorithm from the goal hub, then sort each list by cost and priority. That way from any hub I can access in order the best path to follow and the number of steps to reach the goal hub. So for each drone, I retrieve the path list, check if the best one is free, if not check if the second-best is, and so on. If an auxilary path is free, before choosing it I check if waiting is not smarter. If all paths are occuped, the drone will wait a turn.
 
 # Visual
 The visual representation is done with the 42 mlx library. Hubs are represented by white or colored squares, connections by lines and white horizontal rectangle. You can also see if and how many drones are present on a hub or connections. You can see the total number of turn required to solve the map.

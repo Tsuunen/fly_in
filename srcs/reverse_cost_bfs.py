@@ -2,7 +2,6 @@ from map import Map, Hub
 from typing import Dict, List
 from dataclasses import dataclass
 from utils import Utils
-import sys
 
 
 @dataclass
