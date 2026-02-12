@@ -50,26 +50,25 @@ class ReverseCostBFS():
                 p.cost, p.src.zone_type != "priority"))
 
     def run(self) -> Dict[str, List[Path]]:
+        """Run the graph mapping algorithm
+
+        Returns:
+            Dict[str, List[Path]]
+        """
         paths: Dict[str, List[Path]] = {n.name: [] for n in self.map.hubs}
         queue: List[Path] = [Path(self.map.end, 0)]
         visited = set()
-        dist: Dict[str, int] = {n.name: sys.maxsize for n in self.map.hubs}
 
         while (len(queue) > 0):
             path = queue.pop(0)
-            if (path.src.name in visited):
-                continue
-            visited.add(path.src.name)
-            dist[path.src.name] = path.cost
             for n in self._get_neighboors(path.src):
                 # To prevent path going backward and going onto blocked hub
-                if (Utils.get_hub_travel_cost(n) < 0):
+                if (n.name in visited or Utils.get_hub_travel_cost(n) < 0):
                     continue
-                # Check if i am going backward
-                if (dist[path.src.name] - 1 != dist[n.name]):
-                    self._save_path(n, paths, path)
-                if (n.name not in visited):
+                self._save_path(n, paths, path)
+                if (path.src.name not in visited):
                     queue.append(
                         Path(n, path.cost + 1))
+            visited.add(path.src.name)
             self._sort_paths(paths)
         return (paths)

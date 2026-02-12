@@ -53,6 +53,8 @@ class Solver:
                 (best_path.src, next), self.map.connections)
             if (con is None):
                 return (sys.maxsize)
+            if ("->" in best_path.src.name):
+                wait_cost *= 2
             return (wait_cost - con.max_link_capacity)
         except IndexError:
             return (sys.maxsize)
