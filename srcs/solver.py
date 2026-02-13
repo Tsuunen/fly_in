@@ -119,6 +119,8 @@ class Solver:
 
                 # Drone is on a connection
                 if (current_hub is None):
+                    # Il n'y forcement qu'un chemin qui part d'une connection
+                    # vers un restricted
                     path = self.paths[drone.location][0]
                     reserved[path.src.name].pop()
                     self._move_drone(tmp_state, path, drone,
