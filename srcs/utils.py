@@ -7,6 +7,14 @@ from dataclasses import dataclass
 class Utils:
     @staticmethod
     def get_hub_travel_cost(hub: Hub) -> int:
+        """Get the hub cost
+
+        Args:
+            hub: Hub
+
+        Returns:
+            int
+        """
         match hub.zone_type:
             case "normal" | "priority":
                 return (1)
@@ -18,6 +26,15 @@ class Utils:
     @staticmethod
     def get_connection(couple: Tuple[Hub, Hub],
                        connections: List[Connection]) -> Connection | None:
+        """Get the connection that connect the hub couple
+
+        Args:
+            couple: Tuple[Hub, Hub]
+            connections: List[Connection]
+
+        Returns:
+            Connection | None
+        """
         for c in connections:
             if (Counter((h.name for h in couple))
                     == Counter((h.name for h in c.hubs))):
@@ -26,6 +43,15 @@ class Utils:
 
     @staticmethod
     def get_hub_by_name(hub_name: str, hubs: List[Hub]) -> Hub | None:
+        """Get the hub by name
+
+        Args:
+            hub_name: str
+            hubs: List[Hub]
+
+        Returns:
+            Hub | None
+        """
         for h in hubs:
             if (h.name == hub_name):
                 return (h)
@@ -34,6 +60,15 @@ class Utils:
     @staticmethod
     def get_connection_by_name(con_name: str, connections: List[Connection]) \
             -> Connection | None:
+        """Get the connection by name
+
+        Args:
+            con_name: str
+            connections: List[Connection]
+
+        Returns:
+            Connection | None
+        """
         for c in connections:
             if (c.name == con_name):
                 return (c)
@@ -93,6 +128,15 @@ class ParsingError(Exception):
             str
         """
         def c(text: str, code: str) -> str:
+            """Apply code color to text
+
+            Args:
+                text: str
+                code: str
+
+            Returns:
+
+            """
             return f"\x1b[{code}m{text}\x1b[0m"
 
         BOLD_RED = "31;1"

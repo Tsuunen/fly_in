@@ -15,6 +15,14 @@ class ReverseCostBFS():
         self.map = map
 
     def _get_neighboors(self, hub: Hub) -> List[Hub]:
+        """ Get all hub neighboor hubs
+
+        Args:
+            hub: Hub
+
+        Returns:
+            List[Hub]
+        """
         neighboors: List[Hub] = []
         for c in self.map.connections:
             if (hub in c.hubs):
@@ -23,6 +31,13 @@ class ReverseCostBFS():
 
     def _save_path(self, dst: Hub, paths: Dict[str, List[Path]],
                    path: Path) -> None:
+        """Save a path or update it
+
+        Args:
+            dst: Hub
+            paths: Dict[str, List[Path]]
+            path: Path
+        """
         # If I already have a path from path.src I save the best one
         if (path.src.name in [p.src.name for p in paths[dst.name]]):
             for p in paths[dst.name]:
@@ -44,6 +59,11 @@ class ReverseCostBFS():
                 paths[dst.name].append(path)
 
     def _sort_paths(self, paths: Dict[str, List[Path]]) -> None:
+        """Sort paths by cost and priority
+
+        Args:
+            paths: Dict[str, List[Path]]
+        """
         for path_list in paths.values():
             path_list.sort(key=lambda p: (
                 p.cost, p.src.zone_type != "priority"))

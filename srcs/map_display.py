@@ -33,23 +33,21 @@ class MapDisplay:
 
     Attributes:
         map: Map
-        drones_state: List[List[Drone]]
         cell_size: int
         offset: Tuple[int, int]
         drag_start: Tuple[int, int]
-        m: Mlx
+        m: Mlx()
         mlx: mlx pointer
         win: mlx window
         img: Image
         last_click: timestamp
-        modal: Image
+        modal: mlx window
         current_modal_coord: Tuple[int, int]
         step: int
-        conn_coord: Tuple[int, int]
-        graph_size: int
+        solve: List[State]
+        graph_size: Tuple[int, int]
         x_offset: int
         y_offset: int
-        img_height: int
     """
 
     def __init__(self, map: Map, solve: List[State]):
